@@ -2,7 +2,9 @@ package com.example.chat.message.service;
 
 import com.example.chat.attachment.entity.MessageAttachment;
 import com.example.chat.attachment.repository.MessageAttachmentRepository;
+import com.example.chat.common.exception.AccessDeniedException;
 import com.example.chat.common.exception.ResourceNotFoundException;
+import com.example.chat.conversation.repository.ConversationParticipantRepository;
 import com.example.chat.message.dto.MessageResponse;
 import com.example.chat.message.entity.Message;
 import com.example.chat.message.entity.MessageType;
@@ -11,6 +13,7 @@ import com.example.chat.message.repository.MessageRepository;
 import com.example.chat.user.entity.User;
 import com.example.chat.user.repository.UserRepository;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,16 +29,22 @@ public class MessageService {
     private final MessageRepository messageRepository;
     private final MessageAttachmentRepository attachmentRepository;
     private final UserRepository userRepository;
+    private final ConversationParticipantRepository participantRepository;
     private final MessageMapper messageMapper;
+    private final SimpMessagingTemplate messagingTemplate;
 
     public MessageService(MessageRepository messageRepository,
                           MessageAttachmentRepository attachmentRepository,
                           UserRepository userRepository,
-                          MessageMapper messageMapper) {
+                          ConversationParticipantRepository participantRepository,
+                          MessageMapper messageMapper,
+                          SimpMessagingTemplate messagingTemplate) {
         this.messageRepository = messageRepository;
         this.attachmentRepository = attachmentRepository;
         this.userRepository = userRepository;
+        this.participantRepository = participantRepository;
         this.messageMapper = messageMapper;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
@@ -46,6 +55,18 @@ public class MessageService {
         message.setType(type);
         message.setContent(content);
         return messageRepository.save(message);
+    }
+
+    @Transactional
+    public MessageResponse sendTextMessage(Long chatId, Long senderId, String content) {
+        if (!participantRepository.existsByIdUserIdAndIdConversationId(senderId, chatId)) {
+            throw new AccessDeniedException("You are not a member of this conversation");
+        }
+
+        Message message = createMessage(chatId, senderId, MessageType.TEXT, content);
+        MessageResponse response = buildResponse(message);
+        messagingTemplate.convertAndSend("/topic/chats/" + chatId, response);
+        return response;
     }
 
     @Transactional(readOnly = true)

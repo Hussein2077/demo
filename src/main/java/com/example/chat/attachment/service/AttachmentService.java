@@ -6,8 +6,14 @@ import com.example.chat.attachment.storage.FileStorageService;
 import com.example.chat.attachment.storage.StoredFile;
 import com.example.chat.common.exception.FileTooLargeException;
 import com.example.chat.common.exception.ResourceNotFoundException;
+import com.example.chat.conversation.service.ChatService;
+import com.example.chat.message.dto.MessageResponse;
+import com.example.chat.message.entity.Message;
+import com.example.chat.message.entity.MessageType;
+import com.example.chat.message.service.MessageService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -17,36 +23,55 @@ public class AttachmentService {
 
     private final FileStorageService fileStorageService;
     private final MessageAttachmentRepository attachmentRepository;
+    private final MessageService messageService;
+    private final ChatService chatService;
+    private final SimpMessagingTemplate messagingTemplate;
 
     @Value("${chat.files.max-size}")
     private long maxFileSize;
 
     public AttachmentService(FileStorageService fileStorageService,
-                             MessageAttachmentRepository attachmentRepository) {
+                             MessageAttachmentRepository attachmentRepository,
+                             MessageService messageService,
+                             ChatService chatService,
+                             SimpMessagingTemplate messagingTemplate) {
         this.fileStorageService = fileStorageService;
         this.attachmentRepository = attachmentRepository;
+        this.messageService = messageService;
+        this.chatService = chatService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @Transactional
-    public MessageAttachment storeAndSave(MultipartFile file, Long messageId) {
+    public MessageResponse uploadFileMessage(Long chatId, Long currentUserId, MultipartFile file, String content) {
+        chatService.assertParticipant(currentUserId, chatId);
         validateFile(file);
 
+        Message message = messageService.createMessage(chatId, currentUserId, MessageType.FILE, content);
         StoredFile stored = fileStorageService.store(file);
 
         MessageAttachment attachment = new MessageAttachment();
-        attachment.setMessageId(messageId);
+        attachment.setMessageId(message.getId());
         attachment.setFileName(stored.getOriginalFileName());
         attachment.setContentType(stored.getContentType());
         attachment.setFileSize(stored.getFileSize());
         attachment.setStorageKey(stored.getStorageKey());
+        attachmentRepository.save(attachment);
 
-        return attachmentRepository.save(attachment);
+        MessageResponse response = messageService.buildResponse(message);
+        messagingTemplate.convertAndSend("/topic/chats/" + chatId, response);
+
+        return response;
     }
 
     @Transactional(readOnly = true)
-    public AttachmentDownload resolveDownload(Long attachmentId) {
+    public AttachmentDownload getFileForUser(Long attachmentId, Long currentUserId) {
         MessageAttachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found: " + attachmentId));
+
+        Message message = messageService.findById(attachment.getMessageId());
+        chatService.assertParticipant(currentUserId, message.getConversationId());
+
         Resource resource = fileStorageService.load(attachment.getStorageKey());
         return new AttachmentDownload(attachment, resource);
     }
