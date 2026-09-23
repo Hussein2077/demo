@@ -15,6 +15,7 @@ F:\demo\src\main\java\com\example\chat\common\exception\GlobalExceptionHandler.j
 F:\demo\src\main\java\com\example\chat\common\exception\ResourceNotFoundException.java
 F:\demo\src\main\java\com\example\chat\common\response\ApiResponse.java
 F:\demo\src\main\java\com\example\chat\common\response\PaginatedResponse.java
+F:\demo\src\main\java\com\example\chat\config\CorsConfig.java
 F:\demo\src\main\java\com\example\chat\config\CurrentUserProvider.java
 F:\demo\src\main\java\com\example\chat\config\DatabaseSeeder.java
 F:\demo\src\main\java\com\example\chat\conversation\controller\ChatController.java
