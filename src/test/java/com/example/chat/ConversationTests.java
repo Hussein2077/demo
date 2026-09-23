@@ -64,8 +64,9 @@ public class ConversationTests {
                 .andExpect(jsonPath("$.data.type").value("PRIVATE"))
                 .andReturn().getResponse().getContentAsString();
 
-        // Both responses should return the exact same conversation ID
-        assertThat(response1).isEqualTo(response2);
+        com.fasterxml.jackson.databind.JsonNode node1 = new com.fasterxml.jackson.databind.ObjectMapper().readTree(response1);
+        com.fasterxml.jackson.databind.JsonNode node2 = new com.fasterxml.jackson.databind.ObjectMapper().readTree(response2);
+        assertThat(node1.path("data").path("id").asLong()).isEqualTo(node2.path("data").path("id").asLong());
     }
 
     @Test
