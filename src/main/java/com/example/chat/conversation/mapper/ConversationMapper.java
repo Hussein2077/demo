@@ -21,11 +21,15 @@ public class ConversationMapper {
     }
 
     public ChatSummaryResponse toSummary(Conversation conversation, MessageResponse lastMessage, long unreadCount) {
+        return toSummary(conversation, conversation.getName(), conversation.getAvatarUrl(), lastMessage, unreadCount);
+    }
+
+    public ChatSummaryResponse toSummary(Conversation conversation, String displayName, String displayAvatarUrl, MessageResponse lastMessage, long unreadCount) {
         return new ChatSummaryResponse(
                 conversation.getId(),
                 conversation.getType(),
-                conversation.getName(),
-                conversation.getAvatarUrl(),
+                displayName != null ? displayName : conversation.getName(),
+                displayAvatarUrl != null ? displayAvatarUrl : conversation.getAvatarUrl(),
                 lastMessage,
                 unreadCount,
                 conversation.getUpdatedAt()

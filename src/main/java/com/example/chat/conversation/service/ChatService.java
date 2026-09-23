@@ -1,21 +1,21 @@
 package com.example.chat.conversation.service;
 
 import com.example.chat.common.exception.AccessDeniedException;
-import com.example.chat.common.exception.ConflictException;
 import com.example.chat.common.exception.ResourceNotFoundException;
 import com.example.chat.conversation.dto.ChatSummaryResponse;
 import com.example.chat.conversation.dto.ConversationResponse;
 import com.example.chat.conversation.entity.Conversation;
 import com.example.chat.conversation.entity.ConversationParticipant;
+import com.example.chat.conversation.entity.ConversationParticipantId;
 import com.example.chat.conversation.entity.ConversationType;
 import com.example.chat.conversation.mapper.ConversationMapper;
 import com.example.chat.conversation.repository.ConversationParticipantRepository;
 import com.example.chat.conversation.repository.ConversationRepository;
 import com.example.chat.message.dto.MessageResponse;
 import com.example.chat.message.entity.Message;
-import com.example.chat.message.repository.MessageRepository;
 import com.example.chat.message.service.MessageService;
 import com.example.chat.user.entity.User;
+import com.example.chat.user.repository.UserRepository;
 import com.example.chat.user.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,22 +28,22 @@ public class ChatService {
 
     private final ConversationRepository conversationRepository;
     private final ConversationParticipantRepository participantRepository;
-    private final MessageRepository messageRepository;
     private final MessageService messageService;
     private final UserService userService;
+    private final UserRepository userRepository;
     private final ConversationMapper conversationMapper;
 
     public ChatService(ConversationRepository conversationRepository,
                        ConversationParticipantRepository participantRepository,
-                       MessageRepository messageRepository,
                        MessageService messageService,
                        UserService userService,
+                       UserRepository userRepository,
                        ConversationMapper conversationMapper) {
         this.conversationRepository = conversationRepository;
         this.participantRepository = participantRepository;
-        this.messageRepository = messageRepository;
         this.messageService = messageService;
         this.userService = userService;
+        this.userRepository = userRepository;
         this.conversationMapper = conversationMapper;
     }
 
@@ -73,7 +73,26 @@ public class ChatService {
                             membership.getLastReadMessageId(),
                             userId
                     );
-                    return conversationMapper.toSummary(conversation, lastMessage.orElse(null), unreadCount);
+
+                    String displayName = conversation.getName();
+                    String avatarUrl = conversation.getAvatarUrl();
+
+                    if (conversation.getType() == ConversationType.PRIVATE) {
+                        List<ConversationParticipant> participants = participantRepository.findByIdConversationId(conversation.getId());
+                        Optional<Long> otherUserId = participants.stream()
+                                .map(p -> p.getId().getUserId())
+                                .filter(id -> !id.equals(userId))
+                                .findFirst();
+                        if (otherUserId.isPresent()) {
+                            Optional<User> otherUser = userRepository.findById(otherUserId.get());
+                            if (otherUser.isPresent()) {
+                                displayName = otherUser.get().getDisplayName();
+                                avatarUrl = otherUser.get().getAvatarUrl();
+                            }
+                        }
+                    }
+
+                    return conversationMapper.toSummary(conversation, displayName, avatarUrl, lastMessage.orElse(null), unreadCount);
                 })
                 .sorted((a, b) -> b.getUpdatedAt().compareTo(a.getUpdatedAt()))
                 .toList();
@@ -87,18 +106,11 @@ public class ChatService {
 
         userService.findById(targetUserId); // validates target exists
 
-        List<Long> userIds = List.of(currentUserId, targetUserId);
-        List<Long> existingIds = participantRepository.findConversationsWithExactParticipants(userIds, 2L);
-
-        // Filter to only PRIVATE conversations
-        Optional<Conversation> existing = existingIds.stream()
-                .map(conversationRepository::findById)
-                .filter(opt -> opt.isPresent() && opt.get().getType() == ConversationType.PRIVATE)
-                .map(Optional::get)
-                .findFirst();
-
-        if (existing.isPresent()) {
-            return conversationMapper.toResponse(existing.get());
+        List<Long> existingIds = participantRepository.findPrivateConversationBetween(currentUserId, targetUserId);
+        if (!existingIds.isEmpty()) {
+            Conversation existing = conversationRepository.findById(existingIds.get(0))
+                    .orElseThrow(() -> new ResourceNotFoundException("Conversation not found"));
+            return conversationMapper.toResponse(existing);
         }
 
         Conversation conversation = new Conversation();
@@ -118,7 +130,7 @@ public class ChatService {
             throw new IllegalArgumentException("Message does not belong to this conversation");
         }
 
-        var participantId = new com.example.chat.conversation.entity.ConversationParticipantId(conversationId, userId);
+        ConversationParticipantId participantId = new ConversationParticipantId(conversationId, userId);
         ConversationParticipant participant = participantRepository.findById(participantId)
                 .orElseThrow(() -> new AccessDeniedException("You are not a member of this conversation"));
         participant.setLastReadMessageId(messageId);
