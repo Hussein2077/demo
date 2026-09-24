@@ -21,6 +21,11 @@ public class InMemoryConversationParticipantRepository implements ConversationPa
     }
 
     @Override
+    public Optional<ConversationParticipant> findById(ConversationParticipantId id) {
+        return Optional.ofNullable(storage.get(id));
+    }
+
+    @Override
     public List<ConversationParticipant> findByIdUserId(Long userId) {
         return storage.values().stream()
                 .filter(cp -> cp.getId().getUserId().equals(userId))

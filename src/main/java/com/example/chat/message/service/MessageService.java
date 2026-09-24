@@ -5,6 +5,7 @@ import com.example.chat.attachment.repository.MessageAttachmentRepository;
 import com.example.chat.common.exception.AccessDeniedException;
 import com.example.chat.common.exception.ResourceNotFoundException;
 import com.example.chat.conversation.repository.ConversationParticipantRepository;
+import com.example.chat.conversation.repository.ConversationRepository;
 import com.example.chat.conversation.dto.GlobalChatEvent;
 import com.example.chat.conversation.entity.ConversationParticipant;
 import com.example.chat.message.dto.MessageResponse;
@@ -17,7 +18,6 @@ import com.example.chat.user.repository.UserRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Collections;
 import java.util.List;
@@ -32,6 +32,7 @@ public class MessageService {
     private final MessageAttachmentRepository attachmentRepository;
     private final UserRepository userRepository;
     private final ConversationParticipantRepository participantRepository;
+    private final ConversationRepository conversationRepository;
     private final MessageMapper messageMapper;
     private final SimpMessagingTemplate messagingTemplate;
 
@@ -39,27 +40,32 @@ public class MessageService {
                           MessageAttachmentRepository attachmentRepository,
                           UserRepository userRepository,
                           ConversationParticipantRepository participantRepository,
+                          ConversationRepository conversationRepository,
                           MessageMapper messageMapper,
                           SimpMessagingTemplate messagingTemplate) {
         this.messageRepository = messageRepository;
         this.attachmentRepository = attachmentRepository;
         this.userRepository = userRepository;
         this.participantRepository = participantRepository;
+        this.conversationRepository = conversationRepository;
         this.messageMapper = messageMapper;
         this.messagingTemplate = messagingTemplate;
     }
 
-    @Transactional
     public Message createMessage(Long conversationId, Long senderId, MessageType type, String content) {
         Message message = new Message();
         message.setConversationId(conversationId);
         message.setSenderId(senderId);
         message.setType(type);
         message.setContent(content);
-        return messageRepository.save(message);
+        Message saved = messageRepository.save(message);
+        conversationRepository.findById(conversationId).ifPresent(conversation -> {
+            conversation.setUpdatedAt(saved.getCreatedAt());
+            conversationRepository.save(conversation);
+        });
+        return saved;
     }
 
-    @Transactional
     public MessageResponse sendTextMessage(Long chatId, Long senderId, String content) {
         if (!participantRepository.existsByIdUserIdAndIdConversationId(senderId, chatId)) {
             throw new AccessDeniedException("You are not a member of this conversation");
@@ -78,15 +84,14 @@ public class MessageService {
         messagingTemplate.convertAndSend("/topic/chats/" + chatId, response);
         
         // Broadcast to each participant's global chat list stream
-        List<ConversationParticipant> participants = participantRepository.findByConversationId(chatId);
+        List<ConversationParticipant> participants = participantRepository.findByIdConversationId(chatId);
         for (ConversationParticipant cp : participants) {
-            long unreadCount = countUnread(chatId, cp.getLastReadMessageId(), cp.getUserId());
+            long unreadCount = countUnread(chatId, cp.getLastReadMessageId(), cp.getId().getUserId());
             GlobalChatEvent event = new GlobalChatEvent("NEW_MESSAGE", chatId, response, unreadCount, createdAt);
-            messagingTemplate.convertAndSend("/topic/users/" + cp.getUserId() + "/chats", event);
+            messagingTemplate.convertAndSend("/topic/users/" + cp.getId().getUserId() + "/chats", event);
         }
     }
 
-    @Transactional(readOnly = true)
     public List<MessageResponse> getHistory(Long conversationId, int limit, Long beforeId) {
         List<Message> messages;
         if (beforeId != null) {
@@ -124,7 +129,6 @@ public class MessageService {
         return result;
     }
 
-    @Transactional(readOnly = true)
     public MessageResponse buildResponse(Message message) {
         User sender = userRepository.findById(message.getSenderId())
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + message.getSenderId()));
@@ -132,7 +136,6 @@ public class MessageService {
         return messageMapper.toResponse(message, sender, attachments);
     }
 
-    @Transactional(readOnly = true)
     public Optional<MessageResponse> getLastMessage(Long conversationId) {
         return messageRepository.findFirstByConversationIdOrderByIdDesc(conversationId)
                 .map(m -> {
@@ -143,12 +146,10 @@ public class MessageService {
                 });
     }
 
-    @Transactional(readOnly = true)
     public long countUnread(Long conversationId, Long lastReadMessageId, Long userId) {
         return messageRepository.countUnreadMessages(conversationId, lastReadMessageId != null ? lastReadMessageId : 0L, userId);
     }
 
-    @Transactional(readOnly = true)
     public Message findById(Long messageId) {
         return messageRepository.findById(messageId)
                 .orElseThrow(() -> new ResourceNotFoundException("Message not found: " + messageId));

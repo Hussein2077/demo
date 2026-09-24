@@ -1,0 +1,9 @@
+com\example\chat\common\response\ApiResponse.class
+com\example\chat\user\dto\UserResponse.class
+com\example\chat\attachment\storage\FileStorageService.class
+com\example\chat\attachment\dto\AttachmentResponse.class
+com\example\chat\attachment\repository\MessageAttachmentRepository.class
+com\example\chat\message\dto\MessageResponse.class
+com\example\chat\config\CurrentUserProvider.class
+com\example\chat\ChatApplication.class
+com\example\chat\message\entity\MessageType.class

@@ -15,7 +15,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -42,7 +41,6 @@ public class AttachmentService {
         this.messagingTemplate = messagingTemplate;
     }
 
-    @Transactional
     public MessageResponse uploadFileMessage(Long chatId, Long currentUserId, MultipartFile file, String content) {
         chatService.assertParticipant(currentUserId, chatId);
         validateFile(file);
@@ -64,7 +62,6 @@ public class AttachmentService {
         return response;
     }
 
-    @Transactional(readOnly = true)
     public AttachmentDownload getFileForUser(Long attachmentId, Long currentUserId) {
         MessageAttachment attachment = attachmentRepository.findById(attachmentId)
                 .orElseThrow(() -> new ResourceNotFoundException("Attachment not found: " + attachmentId));

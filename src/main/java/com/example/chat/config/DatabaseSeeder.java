@@ -57,6 +57,9 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         Conversation ahmedAli = getOrCreatePrivateChat(ahmed, ali);
         seedMessagesIfFew(ahmedAli.getId(), List.of(ahmed, ali), 20, "Message between Ahmed and Ali #");
+
+        Conversation ahmedSara = getOrCreatePrivateChat(ahmed, sara);
+        seedMessagesIfFew(ahmedSara.getId(), List.of(ahmed, sara), 15, "Message between Ahmed and Sara #");
     }
 
     private User getOrCreateUser(String username, String displayName) {

@@ -18,7 +18,6 @@ import com.example.chat.user.entity.User;
 import com.example.chat.user.repository.UserRepository;
 import com.example.chat.user.service.UserService;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -47,20 +46,17 @@ public class ChatService {
         this.conversationMapper = conversationMapper;
     }
 
-    @Transactional(readOnly = true)
     public void assertParticipant(Long userId, Long conversationId) {
         if (!participantRepository.existsByIdUserIdAndIdConversationId(userId, conversationId)) {
             throw new AccessDeniedException("You are not a member of this conversation");
         }
     }
 
-    @Transactional(readOnly = true)
     public Conversation findConversationById(Long conversationId) {
         return conversationRepository.findById(conversationId)
                 .orElseThrow(() -> new ResourceNotFoundException("Conversation not found: " + conversationId));
     }
 
-    @Transactional(readOnly = true)
     public List<ChatSummaryResponse> listChats(Long userId) {
         List<ConversationParticipant> memberships = participantRepository.findByIdUserId(userId);
 
@@ -98,7 +94,6 @@ public class ChatService {
                 .toList();
     }
 
-    @Transactional
     public ConversationResponse getOrCreatePrivateChat(Long currentUserId, Long targetUserId) {
         if (currentUserId.equals(targetUserId)) {
             throw new IllegalArgumentException("Cannot create a chat with yourself");
@@ -123,7 +118,6 @@ public class ChatService {
         return conversationMapper.toResponse(conversation);
     }
 
-    @Transactional
     public void markRead(Long conversationId, Long userId, Long messageId) {
         Message message = messageService.findById(messageId);
         if (!message.getConversationId().equals(conversationId)) {

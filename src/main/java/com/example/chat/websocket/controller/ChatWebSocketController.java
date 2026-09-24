@@ -3,12 +3,11 @@ package com.example.chat.websocket.controller;
 import com.example.chat.message.dto.SendMessageRequest;
 import com.example.chat.message.service.MessageService;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import java.security.Principal;
 import org.springframework.stereotype.Controller;
+
+import java.security.Principal;
 
 @Controller
 public class ChatWebSocketController {

@@ -29,7 +29,7 @@ public class UserController {
 
     @GetMapping("/search")
     @Operation(summary = "Search users by username or display name")
-    public ResponseEntity<ApiResponse<List<UserResponse>>> search(@RequestParam String q) {
+    public ResponseEntity<ApiResponse<List<UserResponse>>> search(@RequestParam(defaultValue = "") String q) {
         Long currentUserId = currentUserProvider.getCurrentUserId();
         List<UserResponse> results = userService.searchUsers(q, currentUserId);
         return ResponseEntity.ok(ApiResponse.ok(results));

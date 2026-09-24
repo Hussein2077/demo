@@ -17,6 +17,10 @@ spring:
         dialect: org.hibernate.dialect.H2Dialect
 
 chat:
+  cors:
+    allowed-origin-patterns:
+      - http://localhost:*
+      - http://127.0.0.1:*
   files:
     max-size: 10485760
     storage-path: ./target/test-storage/chat

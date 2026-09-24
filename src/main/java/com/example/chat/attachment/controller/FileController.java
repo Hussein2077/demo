@@ -39,8 +39,18 @@ public class FileController {
 
     @GetMapping("/api/files/{attachmentId}")
     @Operation(summary = "Download a file attachment")
-    public ResponseEntity<Resource> downloadFile(@PathVariable Long attachmentId) {
-        Long currentUserId = currentUserProvider.getCurrentUserId();
+    public ResponseEntity<Resource> downloadFile(
+            @PathVariable Long attachmentId,
+            @RequestParam(value = "userId", required = false) Long userIdParam) {
+        Long currentUserId;
+        try {
+            currentUserId = currentUserProvider.getCurrentUserId();
+        } catch (Exception ex) {
+            if (userIdParam == null) {
+                throw new IllegalArgumentException("Missing required header: X-User-Id");
+            }
+            currentUserId = userIdParam;
+        }
         AttachmentService.AttachmentDownload download = attachmentService.getFileForUser(attachmentId, currentUserId);
 
         MediaType mediaType;

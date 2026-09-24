@@ -6,7 +6,6 @@ import com.example.chat.user.entity.User;
 import com.example.chat.user.mapper.UserMapper;
 import com.example.chat.user.repository.UserRepository;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -21,13 +20,11 @@ public class UserService {
         this.userMapper = userMapper;
     }
 
-    @Transactional(readOnly = true)
     public User findById(Long userId) {
         return userRepository.findById(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + userId));
     }
 
-    @Transactional(readOnly = true)
     public List<UserResponse> searchUsers(String query, Long currentUserId) {
         return userRepository
                 .findByUsernameContainingIgnoreCaseOrDisplayNameContainingIgnoreCase(query, query)
