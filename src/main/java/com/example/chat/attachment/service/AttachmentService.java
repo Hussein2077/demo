@@ -59,7 +59,7 @@ public class AttachmentService {
         attachmentRepository.save(attachment);
 
         MessageResponse response = messageService.buildResponse(message);
-        messagingTemplate.convertAndSend("/topic/chats/" + chatId, response);
+        messageService.broadcastMessageEvent(chatId, response, message.getCreatedAt());
 
         return response;
     }

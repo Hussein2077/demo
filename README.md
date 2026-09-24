@@ -8,32 +8,14 @@ A clean, production-ready mock backend for a chat application built with Spring 
 
 - **Java**: 21 or higher
 - **Build Tool**: Maven (wrapper included: `mvnw.cmd` / `./mvnw`)
-- **Database**: PostgreSQL 14+ (or higher)
 
 ---
 
-## 2. Database Setup
+## 2. No Database Required (In-Memory Demo)
 
-1. Make sure your PostgreSQL server is running on `localhost:5432`.
-2. Connect to PostgreSQL using `psql` or pgAdmin, and create the database:
-   ```sql
-   CREATE DATABASE chat_db;
-   ```
-3. Set your environment variables if different from the default (`postgres`/`postgres`):
-   - `DB_USERNAME`: Database username (default: `postgres`)
-   - `DB_PASSWORD`: Database password (default: `postgres`)
-
-   **Windows (PowerShell)**:
-   ```powershell
-   $env:DB_USERNAME="postgres"
-   $env:DB_PASSWORD="your_password"
-   ```
-
-   **Linux / macOS**:
-   ```bash
-   export DB_USERNAME=postgres
-   export DB_PASSWORD=your_password
-   ```
+For this phase, the application runs entirely in-memory.
+**No PostgreSQL or database installation is required.**
+Data is stored using thread-safe collections and is re-initialized with static seed data every time the application starts.
 
 ---
 
@@ -281,12 +263,29 @@ X-User-Id: 1
 
 ## 6. WebSocket / STOMP Realtime Messaging
 
-- **STOMP Endpoint**: `/ws` (with SockJS fallback supported)
+- **STOMP Endpoint**: `/ws`
 - **Application Prefix**: `/app`
 - **Broker Prefix**: `/topic`
 
-### **Subscription**
-Subscribe to a specific chat room:
+### **Global Chat List Realtime Updates (IMPORTANT)**
+Flutter should subscribe to this user-level destination once after login to update the Chat List in realtime.
+```text
+SUBSCRIBE
+destination:/topic/users/{userId}/chats
+```
+Event Payload:
+```json
+{
+  "eventType": "NEW_MESSAGE",
+  "chatId": 2,
+  "message": { ... },
+  "unreadCount": 1,
+  "chatUpdatedAt": "2026-09-24T10:00:00"
+}
+```
+
+### **Chat-Level Subscription**
+Subscribe to a specific chat room for new messages:
 ```text
 SUBSCRIBE
 destination:/topic/chats/{chatId}

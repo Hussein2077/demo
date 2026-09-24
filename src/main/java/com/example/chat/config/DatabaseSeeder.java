@@ -12,7 +12,6 @@ import com.example.chat.user.entity.User;
 import com.example.chat.user.repository.UserRepository;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -38,7 +37,6 @@ public class DatabaseSeeder implements CommandLineRunner {
     }
 
     @Override
-    @Transactional
     public void run(String... args) {
         // 1. Static 5 Users
         User ahmed = getOrCreateUser("ahmed", "Ahmed Mohamed");
@@ -51,17 +49,14 @@ public class DatabaseSeeder implements CommandLineRunner {
 
         // 2. Static Group: "System Chat"
         Conversation systemChat = getOrCreateGroup("System Chat", allUsers);
-        seedMessagesIfFew(systemChat.getId(), allUsers, 110, "System Chat message #");
+        seedMessagesIfFew(systemChat.getId(), allUsers, 100, "System Chat message #");
 
         // 3. Sample Private Conversations
         Conversation ahmedMohamed = getOrCreatePrivateChat(ahmed, mohamed);
-        seedMessagesIfFew(ahmedMohamed.getId(), List.of(ahmed, mohamed), 55, "Message between Ahmed and Mohamed #");
+        seedMessagesIfFew(ahmedMohamed.getId(), List.of(ahmed, mohamed), 30, "Message between Ahmed and Mohamed #");
 
         Conversation ahmedAli = getOrCreatePrivateChat(ahmed, ali);
-        seedMessagesIfFew(ahmedAli.getId(), List.of(ahmed, ali), 35, "Message between Ahmed and Ali #");
-
-        Conversation ahmedSara = getOrCreatePrivateChat(ahmed, sara);
-        seedMessagesIfFew(ahmedSara.getId(), List.of(ahmed, sara), 15, "Message between Ahmed and Sara #");
+        seedMessagesIfFew(ahmedAli.getId(), List.of(ahmed, ali), 20, "Message between Ahmed and Ali #");
     }
 
     private User getOrCreateUser(String username, String displayName) {
@@ -131,6 +126,8 @@ public class DatabaseSeeder implements CommandLineRunner {
             messagesToSave.add(message);
         }
 
-        messageRepository.saveAll(messagesToSave);
+        for (Message m : messagesToSave) {
+            messageRepository.save(m);
+        }
     }
 }

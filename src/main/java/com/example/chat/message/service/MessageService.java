@@ -5,6 +5,8 @@ import com.example.chat.attachment.repository.MessageAttachmentRepository;
 import com.example.chat.common.exception.AccessDeniedException;
 import com.example.chat.common.exception.ResourceNotFoundException;
 import com.example.chat.conversation.repository.ConversationParticipantRepository;
+import com.example.chat.conversation.dto.GlobalChatEvent;
+import com.example.chat.conversation.entity.ConversationParticipant;
 import com.example.chat.message.dto.MessageResponse;
 import com.example.chat.message.entity.Message;
 import com.example.chat.message.entity.MessageType;
@@ -65,8 +67,23 @@ public class MessageService {
 
         Message message = createMessage(chatId, senderId, MessageType.TEXT, content);
         MessageResponse response = buildResponse(message);
-        messagingTemplate.convertAndSend("/topic/chats/" + chatId, response);
+        
+        broadcastMessageEvent(chatId, response, message.getCreatedAt());
+
         return response;
+    }
+
+    public void broadcastMessageEvent(Long chatId, MessageResponse response, java.time.LocalDateTime createdAt) {
+        // Broadcast to chat destination
+        messagingTemplate.convertAndSend("/topic/chats/" + chatId, response);
+        
+        // Broadcast to each participant's global chat list stream
+        List<ConversationParticipant> participants = participantRepository.findByConversationId(chatId);
+        for (ConversationParticipant cp : participants) {
+            long unreadCount = countUnread(chatId, cp.getLastReadMessageId(), cp.getUserId());
+            GlobalChatEvent event = new GlobalChatEvent("NEW_MESSAGE", chatId, response, unreadCount, createdAt);
+            messagingTemplate.convertAndSend("/topic/users/" + cp.getUserId() + "/chats", event);
+        }
     }
 
     @Transactional(readOnly = true)
