@@ -37,6 +37,7 @@ C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\conversat
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\conversation\service\ChatService.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\controller\MessageController.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\dto\MessageResponse.java
+C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\dto\ReadMessageRequest.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\dto\SendMessageRequest.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\entity\Message.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\entity\MessageType.java
@@ -44,6 +45,9 @@ C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\m
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\repository\InMemoryMessageRepository.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\repository\MessageRepository.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\message\service\MessageService.java
+C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\read\ReadStateService.java
+C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\sse\controller\ChatSseController.java
+C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\sse\service\ChatSseService.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\user\controller\UserController.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\user\dto\UserResponse.java
 C:\Users\Ultimate\Documents\GitHub\demo\src\main\java\com\example\chat\user\entity\User.java

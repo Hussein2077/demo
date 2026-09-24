@@ -60,9 +60,17 @@ public class FileController {
             mediaType = MediaType.APPLICATION_OCTET_STREAM;
         }
 
+        // Choose inline for viewable types (images, PDF, plain text) otherwise force download
+        boolean inline = mediaType.isCompatibleWith(MediaType.IMAGE_JPEG) ||
+                mediaType.isCompatibleWith(MediaType.IMAGE_PNG) ||
+                mediaType.isCompatibleWith(MediaType.IMAGE_GIF) ||
+                mediaType.equals(MediaType.APPLICATION_PDF) ||
+                mediaType.isCompatibleWith(MediaType.TEXT_PLAIN) ||
+                mediaType.isCompatibleWith(MediaType.TEXT_HTML);
+        String disposition = inline ? "inline" : "attachment";
         return ResponseEntity.ok()
                 .contentType(mediaType)
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + download.attachment().getFileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, disposition + "; filename=\"" + download.attachment().getFileName() + "\"")
                 .body(download.resource());
     }
 }

@@ -1,4 +1,7 @@
 com\example\chat\ChatApplicationTests.class
 com\example\chat\ConversationTests.class
+com\example\chat\UnreadTests.class
+com\example\chat\WebSocketTests.class
 com\example\chat\FileTests.class
+com\example\chat\MessageTests.class
 com\example\chat\UserTests.class

@@ -18,6 +18,7 @@ import com.example.chat.user.repository.UserRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
+import com.example.chat.sse.service.ChatSseService;
 
 import java.util.Collections;
 import java.util.List;
@@ -36,13 +37,16 @@ public class MessageService {
     private final MessageMapper messageMapper;
     private final SimpMessagingTemplate messagingTemplate;
 
+    private final ChatSseService sseService;
+
     public MessageService(MessageRepository messageRepository,
                           MessageAttachmentRepository attachmentRepository,
                           UserRepository userRepository,
                           ConversationParticipantRepository participantRepository,
                           ConversationRepository conversationRepository,
                           MessageMapper messageMapper,
-                          SimpMessagingTemplate messagingTemplate) {
+                          SimpMessagingTemplate messagingTemplate,
+                          ChatSseService sseService) {
         this.messageRepository = messageRepository;
         this.attachmentRepository = attachmentRepository;
         this.userRepository = userRepository;
@@ -50,6 +54,8 @@ public class MessageService {
         this.conversationRepository = conversationRepository;
         this.messageMapper = messageMapper;
         this.messagingTemplate = messagingTemplate;
+        this.sseService = sseService;
+
     }
 
     public Message createMessage(Long conversationId, Long senderId, MessageType type, String content) {
@@ -89,6 +95,7 @@ public class MessageService {
             long unreadCount = countUnread(chatId, cp.getLastReadMessageId(), cp.getId().getUserId());
             GlobalChatEvent event = new GlobalChatEvent("NEW_MESSAGE", chatId, response, unreadCount, createdAt);
             messagingTemplate.convertAndSend("/topic/users/" + cp.getId().getUserId() + "/chats", event);
+            sseService.sendEvent(cp.getId().getUserId(), event);
         }
     }
 
