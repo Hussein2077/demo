@@ -46,8 +46,8 @@ public class UnreadTests {
 
         // Reset Ahmed's read state to latest existing message
         Message lastExisting = messageRepository.findFirstByConversationIdOrderByIdDesc(chatId).orElseThrow();
-        ConversationParticipant participant = participantRepository
-                .findById(new ConversationParticipantId(chatId, 1L)).orElseThrow();
+        ConversationParticipant participant = participantRepository.   
+                findById(new ConversationParticipantId(chatId, 1L)).orElseThrow();
         participant.setLastReadMessageId(lastExisting.getId());
         participantRepository.save(participant);
 
