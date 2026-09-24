@@ -6,9 +6,14 @@ import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBr
 import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
 import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
 
+import org.springframework.beans.factory.annotation.Value;
+
 @Configuration
 @EnableWebSocketMessageBroker
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
+
+    @Value("${chat.cors.allowed-origins:*}")
+    private String[] allowedOrigins;
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
@@ -19,7 +24,6 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry) {
         registry.addEndpoint("/ws")
-                .setAllowedOriginPatterns("*")
-                .withSockJS();
+                .setAllowedOrigins(allowedOrigins);
     }
 }
